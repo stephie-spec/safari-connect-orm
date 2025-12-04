@@ -1,4 +1,13 @@
-import sqlite3
+from sqlalchemy.orm import declarative_base
 
-CONN = sqlite3.connect('company.db')
-CURSOR = CONN.cursor()
+# Create declarative base
+Base = declarative_base()
+
+# Import all models
+from .user import User
+from .destination import Destination
+from .blog import Blog
+from .blog_destination import blog_destinations
+
+# Export all models
+__all__ = ['Base', 'User', 'Destination', 'Blog', 'blog_destinations']
