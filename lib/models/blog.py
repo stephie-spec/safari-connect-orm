@@ -1,8 +1,7 @@
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime
-from sqlalchemy.orm import DeclarativeBase, relationship
-
-class Base(DeclarativeBase):
-	pass
+from sqlalchemy.orm import relationship
+from datetime import datetime
+from . import Base
 
 class Blog(Base):
     __tablename__ = 'blogs'

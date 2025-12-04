@@ -1,8 +1,7 @@
 from sqlalchemy import Column, Integer, String, DateTime
-from sqlalchemy.orm import DeclarativeBase, relationship
-
-class Base(DeclarativeBase):
-	pass
+from sqlalchemy.orm import relationship
+from datetime import datetime
+from . import Base
 
 class User(Base):
 	__tablename__ = 'users'
@@ -13,7 +12,7 @@ class User(Base):
 	created_at = Column(DateTime, default = datetime.now)
 
 	destinations = relationship("Destination", back_populates="user")
-	blogs = relationship("Blog", back_populates=user)
+	blogs = relationship("Blog", back_populates="user")
 
 	def __repr__(self):
 		return f"<User(id={self.id}, username='{self.username}'>)"
