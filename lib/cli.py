@@ -10,7 +10,9 @@ from helpers import (
     create_blog,
     search_destinations,
     view_blog_destinations,
-    view_destination_blogs
+    view_destination_blogs,
+    clear_table, 
+    clear_all_data
 )
 
 
@@ -19,7 +21,7 @@ def main():
     print("Welcome to SafariConnect")
     print("=" * 50)
     
-    # Initialize database if needed
+    # Initialize database
     init_db()
     
     while True:
@@ -48,6 +50,14 @@ def main():
             view_destination_blogs()
         elif choice == "10":
             add_sample_data()
+        elif choice == "11":
+            clear_table("users")
+        elif choice == "12":
+            clear_table("destinations")
+        elif choice == "13":
+            clear_table("blogs")
+        elif choice == "14":
+            clear_all_data()
         else:
             print("Invalid choice. Please try again.")
 
@@ -68,6 +78,10 @@ def menu():
     print("8. View blog destinations")
     print("9. View destination blogs")
     print("10. Add sample data")
+    print("11. Clear users table")
+    print("12. Clear destinations table")
+    print("13. Clear blogs table")
+    print("14. Clear ALL data")
     print("-" * 40)
 
 

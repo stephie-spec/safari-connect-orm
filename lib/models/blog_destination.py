@@ -1,11 +1,19 @@
-from sqlalchemy import Column, Integer, ForeignKey, DateTime, Table
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, Integer, ForeignKey, DateTime, UniqueConstraint
+from sqlalchemy.sql import func
 from datetime import datetime
 from . import Base
 
-blog_destinations = Table('blog_destinations', Base.metadata,
-    Column('id', Integer, primary_key=True),
-    Column('blog_id', Integer, ForeignKey('blogs.id'), nullable=False),
-    Column('destination_id', Integer, ForeignKey('destinations.id'), nullable=False),
-    Column('created_at', DateTime, default=datetime.now)
-)
+class BlogDestination(Base):
+    __tablename__ = 'blog_destinations'
+    
+    id = Column(Integer, primary_key=True)
+    blog_id = Column(Integer, ForeignKey('blogs.id'), nullable=False)
+    destination_id = Column(Integer, ForeignKey('destinations.id'), nullable=False)
+    created_at = Column(DateTime, default=datetime.now)
+        
+    __table_args__ = (
+        UniqueConstraint('blog_id', 'destination_id', name='uq_blog_destination'),
+    )
+    
+    def __repr__(self):
+        return f"<BlogDestination(blog_id={self.blog_id}, destination_id={self.destination_id})>"

@@ -76,7 +76,7 @@ def list_users():
         print("No users found.")
         return
     
-    print("\n📋 Users:")
+    print("\nUsers:")
     print("-" * 40)
     for user in users:
         print(f"ID: {user.id}")
@@ -137,25 +137,45 @@ def create_user():
         print("Username and email are required!")
         return
     
-
+    existing_user = session.query(User).filter_by(username=username).first()
+    if existing_user:
+        print(f"Username '{username}' already exists")
+        return
+        
+    existing_email = session.query(User).filter_by(email=email).first()
+    if existing_email:
+        print(f"Email '{email}' already exists")
+        return
+        
     user = User(username=username, email=email)
     session.add(user)
     session.commit()
-    print(f"✅ User created successfully! ID: {user.id}")
-
+        
+    print(f"\nUser created")
+    print(f"   User ID: {user.id}")
+    print(f"   Username: {user.username}")
+    print(f"   Email: {user.email}")
 
 def create_destination():
     """Create a new destination"""
     from models import Destination, User
-    import json
     
-    print("\n🗺️ Create New Destination")
+    print("\nCreate New Destination")
     print("-" * 40)
     
-    # Get user first
-    list_users()
-
-    user_id = int(input("\nEnter User ID who is uploading: "))
+    # List users simply
+    users = session.query(User).all()
+    if not users:
+        print("No users found. Please create a user first!")
+        return
+    
+    print("\nAvailable Users:")
+    print("-" * 30)
+    for user in users:
+        print(f"ID: {user.id} | Username: {user.username}")
+    
+    # Get user selection
+    user_id = int(input("\nEnter Uploader User ID: "))
     user = session.query(User).filter_by(id=user_id).first()
         
     if not user:
@@ -163,42 +183,53 @@ def create_destination():
         return
     
     # Get destination details
-    name = input("Destination Name: ")
+    name = input("\nDestination Name: ")
     category = input("Category: ")
     location = input("Location: ")
-    key_feature = input("Key Feature: ")
-    conservation_status = input("Conservation Status: ")
-    established = input("Established Year (or press Enter): ")
-    area = input("Area: ")
-    description = input("Description: ")
     
-    # Handle images
-    images_input = input("Image URLs (comma-separated, or press Enter for none): ")
-    images = [img.strip() for img in images_input.split(',')] if images_input else []
+    # Optional fields
+    key_feature = input("Key Feature (optional): ")
+    conservation_status = input("Conservation Status (optional): ")
+    established_input = input("Established Year (optional): ")
+    area = input("Area (optional): ")
+    description = input("Description (optional): ")
+    
+    # Get images
+    images_input = input("Image URLs (comma-separated, optional): ")
+    images = []
+    if images_input:
+        images = [url.strip() for url in images_input.split(',')]
     
     # Validate required fields
     if not name or not category or not location:
         print("Name, category, and location are required!")
         return
     
+    established = None
+    if established_input and established_input.isdigit():
+        established = int(established_input)
+        
     destination = Destination(
         name=name,
         category=category,
         location=location,
         key_feature=key_feature if key_feature else None,
         conservation_status=conservation_status if conservation_status else None,
-        established=int(established) if established.isdigit() else None,
+        established=established,
         area=area if area else None,
         description=description if description else None,
-        images=images,
+        images=images,  # This is a Python list
         user=user
     )
         
     session.add(destination)
     session.commit()
-    print(f"Destination created. ID: {destination.id}")
         
-
+    print(f"\nDestination created successfully!")
+    print(f"   Destination ID: {destination.id} (auto-generated)")
+    print(f"   Name: {destination.name}")
+    print(f"   Images added: {len(images)}")
+        
 def create_blog():
     """Create a new blog"""
     from models import Blog, User, Destination
@@ -206,18 +237,27 @@ def create_blog():
     print("\nCreate New Blog")
     print("-" * 40)
     
-    # Get user first
-    list_users()
-
-    user_id = int(input("\nEnter Author User ID: "))
+    # 1. LIST USERS
+    users = session.query(User).all()
+    if not users:
+        print("No users found. Please create a user first!")
+        return
+    
+    print("\nAvailable Users:")
+    print("-" * 30)
+    for user in users:
+        print(f"ID: {user.id} | Username: {user.username}")
+    
+    # 2. GET USER SELECTION
+    user_id = int(input("\nEnter User ID: "))
     user = session.query(User).filter_by(id=user_id).first()
         
     if not user:
         print("User not found!")
         return
     
-    # Get blog details
-    title = input("Blog Title: ")
+    # 3. GET BLOG DETAILS
+    title = input("\nBlog Title: ")
     category = input("Category: ")
     content = input("Content: ")
     
@@ -225,11 +265,19 @@ def create_blog():
         print("Title, category, and content are required!")
         return
     
-    # List destinations for reference
-    list_destinations()
-    destinations_input = input("\nDestination IDs to link (comma-separated, or press Enter for none): ")
+    # 4. LIST DESTINATIONS
+    destinations = session.query(Destination).all()
     
-    # Create blog
+    if destinations:
+        print("\nAvailable Destinations:")
+        print("-" * 50)
+        for dest in destinations:
+            print(f"ID: {dest.id} | Name: {dest.name} | Location: {dest.location}")
+    
+    # 5. GET DESTINATION SELECTION
+    dest_ids_input = input("\nEnter Destination IDs to link or press Enter for none): ")
+    
+    # 6. CREATE BLOG 
     blog = Blog(
         title=title,
         category=category,
@@ -237,20 +285,31 @@ def create_blog():
         user=user
     )
         
-    # Link destinations if provided
-    if destinations_input:
-        dest_ids = [int(id.strip()) for id in destinations_input.split(',')]
-        for dest_id in dest_ids:
-            destination = session.query(Destination).filter_by(id=dest_id).first()
-            if destination:
-                blog.destinations.append(destination)
-            else:
-                print(f"Destination ID {dest_id} not found, skipping...")
-        
+    # ADD TO SESSION FIRST
     session.add(blog)
+    session.flush()  
+        
+    # 7. LINK DESTINATIONS IF PROVIDED
+    if dest_ids_input.strip():
+        for dest_id_str in dest_ids_input.split(','):
+            dest_id_str = dest_id_str.strip()
+            if dest_id_str: 
+                dest_id = int(dest_id_str)
+                destination = session.query(Destination).filter_by(id=dest_id).first()
+                if destination:
+                    blog.destinations.append(destination)
+                    print(f"  Linked to destination: {destination.name}")
+                else:
+                    print(f"  Destination ID {dest_id} not found")
+
+        
+    # 8. COMMIT EVERYTHING
     session.commit()
-    print(f"Blog created successfully! ID: {blog.id}")
-    print(f"\nLinked to {len(blog.destinations)} destinations")
+    print(f"\nBlog created successfully!")
+    print(f"   Blog ID: {blog.id} (auto-generated by database)")
+    print(f"   Title: {blog.title}")
+    print(f"   Destinations linked: {len(blog.destinations)}")
+        
         
 def search_destinations():
     """Search destinations by name or location"""
@@ -286,7 +345,6 @@ def view_blog_destinations():
     
     list_blogs()
     
-    
     blog_id = int(input("\nEnter Blog ID to view destinations: "))
     blog = session.query(Blog).filter_by(id=blog_id).first()
         
@@ -302,7 +360,7 @@ def view_blog_destinations():
         print("No destinations linked to this blog.")
     else:
         for dest in blog.destinations:
-            print(f"• {dest.name} ({dest.location})")
+            print(f"{dest.name} ({dest.location})")
     
 
 def view_destination_blogs():
@@ -326,5 +384,56 @@ def view_destination_blogs():
         print("No blogs about this destination.")
     else:
         for blog in destination.blogs:
-            print(f"• {blog.title} (by {blog.user.username})")
+            print(f"{blog.title} (by {blog.user.username})")
+
+def clear_table(table_name):
+    """Clear all data from a specific table"""
+    from models import User, Destination, Blog
+    if table_name.lower() == "users":
+        count = session.query(User).count()
+        session.query(User).delete()
+        print(f"Cleared {count} users from database")
+            
+    elif table_name.lower() == "destinations":
+        count = session.query(Destination).count()
+        session.query(Destination).delete()
+        print(f"Cleared {count} destinations from database")
+            
+    elif table_name.lower() == "blogs":
+        count = session.query(Blog).count()
+        session.query(Blog).delete()
+        print(f"Cleared {count} blogs from database")
+            
+    else:
+        print("Invalid table name. Use: users, destinations, or blogs")
+        return
+        
+    session.commit()
+        
+
+def clear_all_data():
+    """Clear ALL data from ALL tables"""
+    from models import Blog, Destination, User
+            
+    # Delete blogs first (references destinations)
+    blog_count = session.query(Blog).count()
+    session.query(Blog).delete()
+            
+    # Delete destinations next (references users)
+    dest_count = session.query(Destination).count()
+    session.query(Destination).delete()
+            
+    # Delete users last
+    user_count = session.query(User).count()
+    session.query(User).delete()
+            
+    session.commit()
+            
+    print(f"Cleared all data:")
+    print(f"   - {blog_count} blogs deleted")
+    print(f"   - {dest_count} destinations deleted")
+    print(f"   - {user_count} users deleted")
+            
+        
+
     

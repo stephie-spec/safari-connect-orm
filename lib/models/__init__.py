@@ -7,7 +7,7 @@ Base = declarative_base()
 from .user import User
 from .destination import Destination
 from .blog import Blog
-from .blog_destination import blog_destinations
+from .blog_destination import BlogDestination
 
 # Export all models
-__all__ = ['Base', 'User', 'Destination', 'Blog', 'blog_destinations']
+__all__ = ['Base', 'User', 'Destination', 'Blog', 'BlogDestination']
